@@ -1,3 +1,5 @@
+import redis
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
@@ -9,6 +11,10 @@ from actions.utils import create_action
 from pixels.decorators import ajax_required
 from posts.forms import PostCreateForm
 from posts.models import Post
+
+r = redis.Redis(host=settings.REDIS_HOST,
+                port=settings.REDIS_PORT,
+                db=settings.REDIS_DB)
 
 
 @login_required
@@ -32,7 +38,9 @@ def create_post(request):
 @login_required
 def post_detail_view(request, id, slug):
 	post = get_object_or_404(Post, id=id, slug=slug)
-	return render(request, 'posts/post/detail.html', {'section': 'posts', 'post': post})
+	total_views = r.incr(f'image:{post.id}:views')
+	r.zincrby('image_ranking', 1, image.id)
+	return render(request, 'posts/post/detail.html', {'section': 'posts', 'post': post, 'total_views': total_views})
 
 
 @require_POST
@@ -70,6 +78,19 @@ def posts_list(request):
 		posts = paginator.page(paginator.num_pages)
 	if request.is_ajax():
 		return render(request, 'posts/post/list_ajax.html', {'section': 'posts', 'posts': posts})
-	return render(request,
-	              'posts/post/list.html',
-	              {'section': 'posts', 'posts': posts})
+	return render(request, 'posts/post/list.html', {'section': 'posts', 'posts': posts})
+
+
+@login_required
+def image_ranking(request):
+    # get image ranking dictionary
+    post_ranking = r.zrange('image_ranking', 0, -1, desc=True)[:10]
+    post_ranking_ids = [int(id) for id in post_ranking]
+    # get most viewed images
+    most_viewed = list(Post.objects.filter(
+                           id__in=post_ranking_ids))
+    most_viewed.sort(key=lambda x: post_ranking_ids.index(x.id))
+    return render(request,
+                  'posts/post/ranking.html',
+                  {'section': 'images',
+                   'most_viewed': most_viewed})
