@@ -1,11 +1,14 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.views.decorators.http import require_POST
 
+from actions.models import Action
+from actions.utils import create_action
 from pixels.decorators import ajax_required
 from .forms import UserRegistrationForm, UserEditForm, ProfileEditForm
-from .models import Profile
+from .models import Profile, Contact
 
 
 def register(request):
@@ -17,6 +20,7 @@ def register(request):
                 user_form.cleaned_data['password']
             )
             new_user.save()
+            create_action(new_user, 'has created an account')
             Profile.objects.create(user=new_user)
             return render(request, 'users/register_done.html', {'user': new_user})
     else:
@@ -52,11 +56,21 @@ def edit_details(request):
 
 @login_required
 def dashboard(request):
-    return render(
-        request,
-        'users/dashboard.html',
-        {'section': 'dashboard'}
-    )
+    # Display all actions by default
+    actions = Action.objects.exclude(user=request.user)
+    following_ids = request.user.following.values_list('id',
+                                                       flat=True)
+    if following_ids:
+        # If user is following others, retrieve only their actions
+        actions = actions.filter(user_id__in=following_ids)
+    actions = actions.select_related('user', 'user__profile')\
+                     .prefetch_related('target')[:10]
+
+    return render(request,
+                  'account/dashboard.html',
+                  {'section': 'dashboard',
+                   'actions': actions})
+
 
 @login_required
 def user_list(request):
@@ -86,7 +100,7 @@ def user_follow(request):
     action = request.POST.get('action')
     if user_id and action:
         try:
-            user = User.objects.get(id=user_id)
+            user = Profile.objects.get(id=user_id)
             if action == 'follow':
                 Contact.objects.get_or_create(user_from=request.user,
                                               user_to=user)
@@ -95,6 +109,6 @@ def user_follow(request):
                 Contact.objects.filter(user_from=request.user,
                                        user_to=user).delete()
             return JsonResponse({'status':'ok'})
-        except User.DoesNotExist:
+        except Profile.DoesNotExist:
             return JsonResponse({'status':'error'})
     return JsonResponse({'status':'error'})

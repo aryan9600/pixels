@@ -5,6 +5,7 @@ from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 
+from actions.utils import create_action
 from pixels.decorators import ajax_required
 from posts.forms import PostCreateForm
 from posts.models import Post
@@ -19,6 +20,7 @@ def create_post(request):
 			new_item = form.save(commit=False)
 			new_item.user = request.user
 			new_item.save()
+			create_action(request.user, 'uploaded post', new_item)
 			messages.success(request, "Post uploaded successfully")
 			return redirect(new_item.get_absolute_url())
 	else:
@@ -44,6 +46,7 @@ def like_post(request):
 			post = Post.objects.get(id=post_id)
 			if action == 'like':
 				post.liked_by.add(request.user)
+				create_action(request.user, 'likes', post)
 			else:
 				post.liked_by.remove(request.user)
 			return JsonResponse({'status': 'OK'})
