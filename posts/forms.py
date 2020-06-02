@@ -10,15 +10,16 @@ from posts.models import Post
 class PostCreateForm(forms.ModelForm):
 	class Meta:
 		model = Post
-		fields = ('title', 'url', 'image', 'caption')
+		fields = ('url', 'image', 'caption')
 
 	def clean_url(self):
-		url = self.cleaned_data['url']
-		valid_extensions = ['jpg', 'jpeg', 'png']
-		extension = url.rsplit('.', 1)[1].lower()
-		if extension not in valid_extensions:
-			raise forms.ValidationError('Only images with a .jpg/.jpeg and .png extension are supported')
-		return url
+		if self.cleaned_data['url']:
+			url = self.cleaned_data['url']
+			valid_extensions = ['jpg', 'jpeg', 'png']
+			extension = url.rsplit('.', 1)[1].lower()
+			if extension not in valid_extensions:
+				raise forms.ValidationError('Only images with a .jpg/.jpeg and .png extension are supported')
+			return url
 
 	def save(self, force_insert=False, force_update=False, commit=True):
 		if self.cleaned_data['url']:

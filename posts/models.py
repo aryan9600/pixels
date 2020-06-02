@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.urls import reverse
 from django.utils.text import slugify
 
 
@@ -16,3 +17,6 @@ class Post(models.Model):
 		if not self.slug:
 			self.slug = slugify(self.caption)
 		super().save(*args, **kwargs)
+
+	def get_absolute_url(self):
+		return reverse('posts:detail', args=[self.id, self.slug])

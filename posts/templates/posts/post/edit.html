@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Upload{% endblock %}
+{% block content %}
+	<h1>Upload a post!</h1>
+	<form method="post">
+		{{ form.as_p }}
+		{% csrf_token %}
+		<input type="submit" value="Upload">
+	</form>
+{% endblock %}
