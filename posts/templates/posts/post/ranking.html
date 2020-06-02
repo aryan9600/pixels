@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}Images ranking{% endblock %}
+{% block title %}Posts ranking{% endblock %}
 
 {% block content %}
-  	<h1>Images ranking</h1>
+  	<h1>Posts ranking</h1>
 	<ol>
-    	{% for image in most_viewed %}
+    	{% for post in most_viewed %}
 			<li>
-        		<a href="{{ image.get_absolute_url }}">
-          			{{ image.title }}
+        		<a href="{{ post.get_absolute_url }}">
+          			{{ post.title }}
         		</a>
       		</li>
     	{% endfor %}
