@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+from django.urls import reverse_lazy
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -42,7 +44,9 @@ INSTALLED_APPS = [
     'sorl.thumbnail',
 ]
 
-# AUTH_USER_MODEL = 'django.contrib.auth.models.User'
+ABSOLUTE_URL_OVERRIDES = {
+    'auth.user': lambda u: reverse_lazy('user_detail', args=[u.username])
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
