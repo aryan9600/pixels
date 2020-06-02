@@ -12,6 +12,7 @@ class Post(models.Model):
 	url = models.URLField(blank=True, null=True)
 	created = models.DateTimeField(auto_now_add=True, db_index=True)
 	liked_by = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='images_liked', blank=True)
+	total_likes = models.PositiveIntegerField(db_index=True, default=0)
 
 	def save(self, *args, **kwargs):
 		if not self.slug:
